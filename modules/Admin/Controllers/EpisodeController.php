@@ -22,6 +22,7 @@ use App\Models\PostModel;
 use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\HTTP\Files\UploadedFile;
 use CodeIgniter\HTTP\RedirectResponse;
+use CodeIgniter\HTTP\Response;
 use CodeIgniter\I18n\Time;
 use Modules\Media\Entities\Chapters;
 use Modules\Media\Entities\Transcript;
@@ -36,7 +37,7 @@ class EpisodeController extends BaseController
     public function _remap(string $method, string ...$params): mixed
     {
         if (
-            ! ($podcast = (new PodcastModel())->getPodcastById((int) $params[0])) instanceof Podcast
+            !($podcast = (new PodcastModel())->getPodcastById((int) $params[0])) instanceof Podcast
         ) {
             throw PageNotFoundException::forPageNotFound();
         }
@@ -45,7 +46,7 @@ class EpisodeController extends BaseController
 
         if (count($params) > 1) {
             if (
-                ! ($episode = (new EpisodeModel())
+                !($episode = (new EpisodeModel())
                     ->where([
                         'id'         => $params[1],
                         'podcast_id' => $params[0],
@@ -91,8 +92,7 @@ class EpisodeController extends BaseController
                     ->join('analytics_podcasts_by_episode ape', 'episodes.id=ape.episode_id', 'left')
                     ->where('episodes.podcast_id', $this->podcast->id)
                     ->where(
-                        "MATCH (title, description_markdown, slug, location_name) AGAINST ('{$episodeModel->db->escapeString(
-                            $query
+                        "MATCH (title, description_markdown, slug, location_name) AGAINST ('{$episodeModel->db->escapeString($query
                         )}')"
                     )
                     ->groupBy('episodes.id');
@@ -154,41 +154,75 @@ class EpisodeController extends BaseController
         return view('episode/create', $data);
     }
 
-    public function attemptCreate(): RedirectResponse
+    public function attemptCreate(): Response
     {
+        $response = [
+            'error' => '', // Initialize error field
+            'id'    => '', // Initialize id field
+        ];
+
         $rules = [
-            'title'           => 'required',
             'slug'            => 'required|max_length[128]',
-            'audio_file'      => 'uploaded[audio_file]|ext_in[audio_file,mp3,m4a]',
             'cover'           => 'is_image[cover]|ext_in[cover,jpg,jpeg,png]|min_dims[cover,1400,1400]|is_image_ratio[cover,1,1]',
             'transcript_file' => 'ext_in[transcript,srt]|permit_empty',
             'chapters_file'   => 'ext_in[chapters,json]|permit_empty',
         ];
 
-        if ($this->podcast->type === 'serial' && $this->request->getPost('type') === 'full') {
-            $rules['episode_number'] = 'required';
+        if ($this->request->getPost('audio_file_link')) {
+            $audioFileLink = $this->request->getPost('audio_file_link');
+            $downloadedFilePath = $this->downloadFile($audioFileLink);
+
+            $newFilePath = 'media/podcasts/' . substr($this->podcast->at_handle, 1) . '/' . basename(
+                $downloadedFilePath
+            );
+            if (!file_exists(dirname($newFilePath))) {
+                mkdir(dirname($newFilePath), 0777, true);
+            }
+
+            if (file_exists($downloadedFilePath) && filesize($downloadedFilePath) > 0) {
+                rename($downloadedFilePath, $newFilePath);
+                $file = new File($newFilePath);
+            } else {
+                return redirect()
+                    ->back()
+                    ->withInput()
+                    ->with('error', 'Le fichier n\'a pas pu être téléchargé');
+            }
+
+            $audioMimeType = $file->getMimeType();
+            if (!in_array($audioMimeType, ['audio/mpeg', 'audio/mp4', 'audio/mp3'], true)) {
+                $response['error'] = lang('Episode.messages.sameSlugError'); // Set error field
+                return $this->response->setJSON($response);
+            }
+        } else {
+            $rules['audio_file'] = 'uploaded[audio_file]|ext_in[audio_file,mp3,m4a]';
         }
 
-        if (! $this->validate($rules)) {
-            return redirect()
-                ->back()
-                ->withInput()
-                ->with('errors', $this->validator->getErrors());
+
+        if (!$this->validate($rules)) {
+            $response['error'] = $this->validator->getErrors(); // Set error field
+            return $this->response->setJSON($response);
         }
 
         $validData = $this->validator->getValidated();
+
+        if (isset($file)) {
+            $audioFile = $file;
+        } else {
+            $audioFile = $this->request->getFile('audio_file');
+        }
 
         if ((new EpisodeModel())
             ->where([
                 'slug'       => $validData['slug'],
                 'podcast_id' => $this->podcast->id,
             ])
-            ->first() instanceof Episode) {
-            return redirect()
-                ->back()
-                ->withInput()
-                ->with('error', lang('Episode.messages.sameSlugError'));
+            ->first() instanceof Episode
+        ) {
+            $response['error'] = lang('Episode.messages.sameSlugError'); // Set error field
+            return $this->response->setJSON($response);
         }
+
 
         $db = db_connect();
         $db->transStart();
@@ -200,7 +234,7 @@ class EpisodeController extends BaseController
             'title'                => $this->request->getPost('title'),
             'slug'                 => $this->request->getPost('slug'),
             'guid'                 => null,
-            'audio'                => $this->request->getFile('audio_file'),
+            'audio'                => $audioFile,
             'cover'                => $this->request->getFile('cover'),
             'description_markdown' => $this->request->getPost('description'),
             'location'             => $this->request->getPost('location_name') === '' ? null : new Location(
@@ -209,8 +243,8 @@ class EpisodeController extends BaseController
             'transcript'        => $this->request->getFile('transcript'),
             'chapters'          => $this->request->getFile('chapters'),
             'parental_advisory' => $this->request->getPost('parental_advisory') !== 'undefined'
-                    ? $this->request->getPost('parental_advisory')
-                    : null,
+                ? $this->request->getPost('parental_advisory')
+                : null,
             'number' => $this->request->getPost('episode_number')
                 ? (int) $this->request->getPost('episode_number')
                 : null,
@@ -243,12 +277,10 @@ class EpisodeController extends BaseController
         }
 
         $episodeModel = new EpisodeModel();
-        if (! ($newEpisodeId = $episodeModel->insert($newEpisode, true))) {
+        if (!($newEpisodeId = $episodeModel->insert($newEpisode, true))) {
+            $response['error'] = $episodeModel->errors(); // Set error field
             $db->transRollback();
-            return redirect()
-                ->back()
-                ->withInput()
-                ->with('errors', $episodeModel->errors());
+            return $this->response->setJSON($response);
         }
 
         // update podcast's episode_description_footer_markdown if changed
@@ -259,21 +291,19 @@ class EpisodeController extends BaseController
         if ($this->podcast->hasChanged('episode_description_footer_markdown')) {
             $podcastModel = new PodcastModel();
 
-            if (! $podcastModel->update($this->podcast->id, $this->podcast)) {
+            if (!$podcastModel->update($this->podcast->id, $this->podcast)) {
                 $db->transRollback();
-                return redirect()
-                    ->back()
-                    ->withInput()
-                    ->with('errors', $podcastModel->errors());
+                return $this->response->setJSON($response);
             }
         }
 
         $db->transComplete();
 
-        return redirect()->route('episode-view', [$this->podcast->id, $newEpisodeId])->with(
-            'message',
-            lang('Episode.messages.createSuccess')
-        );
+        $response['id'] = $this->request->getPost('publish') === 'yes' ?
+            route_to('episode-publish', $this->podcast->id, $newEpisodeId) :
+            route_to('episode-view', $this->podcast->id, $newEpisodeId);
+
+        return $this->response->setJSON($response);
     }
 
     public function edit(): string
@@ -307,7 +337,7 @@ class EpisodeController extends BaseController
             $rules['episode_number'] = 'required';
         }
 
-        if (! $this->validate($rules)) {
+        if (!$this->validate($rules)) {
             return redirect()
                 ->back()
                 ->withInput()
@@ -324,8 +354,8 @@ class EpisodeController extends BaseController
         );
         $this->episode->parental_advisory =
             $this->request->getPost('parental_advisory') !== 'undefined'
-                ? $this->request->getPost('parental_advisory')
-                : null;
+            ? $this->request->getPost('parental_advisory')
+            : null;
         $this->episode->number = $this->request->getPost('episode_number')
             ? $this->request->getPost('episode_number')
             : null;
@@ -385,7 +415,7 @@ class EpisodeController extends BaseController
 
         $episodeModel = new EpisodeModel();
 
-        if (! $episodeModel->update($this->episode->id, $this->episode)) {
+        if (!$episodeModel->update($this->episode->id, $this->episode)) {
             $db->transRollback();
 
             return redirect()
@@ -401,7 +431,7 @@ class EpisodeController extends BaseController
 
         if ($this->podcast->hasChanged('episode_description_footer_markdown')) {
             $podcastModel = new PodcastModel();
-            if (! $podcastModel->update($this->podcast->id, $this->podcast)) {
+            if (!$podcastModel->update($this->podcast->id, $this->podcast)) {
                 $db->transRollback();
 
                 return redirect()
@@ -421,12 +451,12 @@ class EpisodeController extends BaseController
 
     public function transcriptDelete(): RedirectResponse
     {
-        if (! $this->episode->transcript instanceof Transcript) {
+        if (!$this->episode->transcript instanceof Transcript) {
             return redirect()->back();
         }
 
         $mediaModel = new MediaModel();
-        if (! $mediaModel->deleteMedia($this->episode->transcript)) {
+        if (!$mediaModel->deleteMedia($this->episode->transcript)) {
             return redirect()
                 ->back()
                 ->withInput()
@@ -438,12 +468,12 @@ class EpisodeController extends BaseController
 
     public function chaptersDelete(): RedirectResponse
     {
-        if (! $this->episode->chapters instanceof Chapters) {
+        if (!$this->episode->chapters instanceof Chapters) {
             return redirect()->back();
         }
 
         $mediaModel = new MediaModel();
-        if (! $mediaModel->deleteMedia($this->episode->chapters)) {
+        if (!$mediaModel->deleteMedia($this->episode->chapters)) {
             return redirect()
                 ->back()
                 ->withInput()
@@ -484,7 +514,7 @@ class EpisodeController extends BaseController
                 'scheduled_publication_date' => 'valid_date[Y-m-d H:i]|permit_empty',
             ];
 
-            if (! $this->validate($rules)) {
+            if (!$this->validate($rules)) {
                 return redirect()
                     ->back()
                     ->withInput()
@@ -532,7 +562,7 @@ class EpisodeController extends BaseController
         $newPost->published_at = $this->episode->published_at;
 
         $postModel = new PostModel();
-        if (! $postModel->addPost($newPost)) {
+        if (!$postModel->addPost($newPost)) {
             $db->transRollback();
             return redirect()
                 ->back()
@@ -541,7 +571,7 @@ class EpisodeController extends BaseController
         }
 
         $episodeModel = new EpisodeModel();
-        if (! $episodeModel->update($this->episode->id, $this->episode)) {
+        if (!$episodeModel->update($this->episode->id, $this->episode)) {
             $db->transRollback();
             return redirect()
                 ->back()
@@ -597,7 +627,7 @@ class EpisodeController extends BaseController
                 'scheduled_publication_date' => 'valid_date[Y-m-d H:i]|permit_empty',
             ];
 
-            if (! $this->validate($rules)) {
+            if (!$this->validate($rules)) {
                 return redirect()
                     ->back()
                     ->withInput()
@@ -642,7 +672,7 @@ class EpisodeController extends BaseController
             $post->published_at = $this->episode->published_at;
 
             $postModel = new PostModel();
-            if (! $postModel->editPost($post)) {
+            if (!$postModel->editPost($post)) {
                 $db->transRollback();
                 return redirect()
                     ->back()
@@ -652,7 +682,7 @@ class EpisodeController extends BaseController
         }
 
         $episodeModel = new EpisodeModel();
-        if (! $episodeModel->update($this->episode->id, $this->episode)) {
+        if (!$episodeModel->update($this->episode->id, $this->episode)) {
             $db->transRollback();
             return redirect()
                 ->back()
@@ -688,7 +718,7 @@ class EpisodeController extends BaseController
             $this->episode->published_at = null;
 
             $episodeModel = new EpisodeModel();
-            if (! $episodeModel->update($this->episode->id, $this->episode)) {
+            if (!$episodeModel->update($this->episode->id, $this->episode)) {
                 $db->transRollback();
                 return redirect()
                     ->back()
@@ -744,7 +774,7 @@ class EpisodeController extends BaseController
             'new_publication_date' => 'valid_date[Y-m-d H:i]',
         ];
 
-        if (! $this->validate($rules)) {
+        if (!$this->validate($rules)) {
             return redirect()
                 ->back()
                 ->withInput()
@@ -771,7 +801,7 @@ class EpisodeController extends BaseController
         $this->episode->published_at = $newPublicationDate;
 
         $episodeModel = new EpisodeModel();
-        if (! $episodeModel->update($this->episode->id, $this->episode)) {
+        if (!$episodeModel->update($this->episode->id, $this->episode)) {
             return redirect()
                 ->back()
                 ->withInput()
@@ -813,7 +843,7 @@ class EpisodeController extends BaseController
             'understand' => 'required',
         ];
 
-        if (! $this->validate($rules)) {
+        if (!$this->validate($rules)) {
             return redirect()
                 ->back()
                 ->withInput()
@@ -849,7 +879,7 @@ class EpisodeController extends BaseController
         $this->episode->published_at = null;
 
         $episodeModel = new EpisodeModel();
-        if (! $episodeModel->update($this->episode->id, $this->episode)) {
+        if (!$episodeModel->update($this->episode->id, $this->episode)) {
             $db->transRollback();
             return redirect()
                 ->back()
@@ -889,7 +919,7 @@ class EpisodeController extends BaseController
             'understand' => 'required',
         ];
 
-        if (! $this->validate($rules)) {
+        if (!$this->validate($rules)) {
             return redirect()
                 ->back()
                 ->withInput()
@@ -909,7 +939,7 @@ class EpisodeController extends BaseController
 
         $episodeModel = new EpisodeModel();
 
-        if (! $episodeModel->delete($this->episode->id)) {
+        if (!$episodeModel->delete($this->episode->id)) {
             $db->transRollback();
             return redirect()
                 ->back()
@@ -928,7 +958,7 @@ class EpisodeController extends BaseController
 
         //delete episode media records from database
         foreach ($episodeMediaList as $episodeMedia) {
-            if ($episodeMedia !== null && ! $mediaModel->delete($episodeMedia->id)) {
+            if ($episodeMedia !== null && !$mediaModel->delete($episodeMedia->id)) {
                 $db->transRollback();
                 return redirect()
                     ->back()
@@ -995,7 +1025,7 @@ class EpisodeController extends BaseController
             'message' => 'required|max_length[500]',
         ];
 
-        if (! $this->validate($rules)) {
+        if (!$this->validate($rules)) {
             return redirect()
                 ->back()
                 ->withInput()
@@ -1014,7 +1044,7 @@ class EpisodeController extends BaseController
 
         $commentModel = new EpisodeCommentModel();
         if (
-            ! $commentModel->addComment($newComment, true)
+            !$commentModel->addComment($newComment, true)
         ) {
             return redirect()
                 ->back()
@@ -1032,7 +1062,7 @@ class EpisodeController extends BaseController
             'message' => 'required|max_length[500]',
         ];
 
-        if (! $this->validate($rules)) {
+        if (!$this->validate($rules)) {
             return redirect()
                 ->back()
                 ->withInput()
@@ -1052,7 +1082,7 @@ class EpisodeController extends BaseController
 
         $commentModel = new EpisodeCommentModel();
         if (
-            ! $commentModel->addComment($newReply, true)
+            !$commentModel->addComment($newReply, true)
         ) {
             return redirect()
                 ->back()
