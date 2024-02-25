@@ -50,6 +50,92 @@ helper('form');
             </a>
         <?php endif; ?>
         <br>
+        
+        <form action="<?= route_to('set-folder') ?>" method="POST" class="flex flex-col w-full max-w-xl gap-y-4" enctype="multipart/form-data">
+            <?= csrf_field() ?>
+            <Forms.Section
+                title="Organisation du Nextcloud"
+                subtitle="Lors de la recherche des fichiers audios, Castopod va chercher dans un dossier
+                principale. Par défaut, il va chercher dans le dossier /castopod, mais vous pouvez
+                le modifier ici">
+            
+            
+            <Forms.Field
+                label="Nom du dossier principal"
+                name="nextcloudFolder"
+                type="text"
+                required="true"
+                value="<?= service('settings')->get('Nextcloud.nextcloudFolder') ?>"
+                hint="Exemple : nomDossier/"
+            />
+
+            <Button 
+                variant="primary" 
+                type="submit" 
+                class="self-end"><?= lang('Settings.theme.submit') ?>
+            </Button>
+
+            </Forms.Section>
+        </form>
+        
+        <br>
+
+        <p>Configuration actuelle du Nextcloud</p>
+
+        <dl class="mt-2 space-y-4">
+            <div class="justify-between">
+                <dt class="text-sm font-medium leading-5 text-left text-skin-muted">
+                    URL de Nextcloud
+                </dt>
+                <dd class="mt-1 text-sm leading-5 text-left text-skin-base">
+                    <?= service('settings')->get('Nextcloud.nextcloudUrl') ?>
+                </dd>
+            </div>
+            <div class="justify-between">
+                <dt class="text-sm font-medium leading-5 text-left text-skin-muted">
+                    Clé utilisateur
+                </dt>
+                <dd class="mt-1 text-sm leading-5 text-left text-skin-base">
+                    <?= service('settings')->get('Nextcloud.nextcloudIdClient') ?>
+                </dd>
+            </div>
+            <div class="justify-between">
+                <dt class="text-sm font-medium leading-5 text-left text-skin-muted">
+                    Clé secrète
+                </dt>
+                <dd class="mt-1 text-sm leading-5 text-left text-skin-base">
+                    <span id="secretKey" style="display: none;">
+                        <?= service('settings')->get('Nextcloud.nextcloudSecret') ?>
+                    </span>
+                    <button id="toggleButton" onclick="toggleSecretKey()">
+                        Afficher la clé secrète
+                    </button>
+                </dd>
+            </div>
+
+            <script>
+                function toggleSecretKey() {
+                    var secretKey = document.getElementById("secretKey");
+                    var button = document.getElementById("toggleButton");
+                    if (secretKey.style.display === "none") {
+                        secretKey.style.display = "inline";
+                        button.innerText = "Masquer la clé secrète";
+                    } else {
+                        secretKey.style.display = "none";
+                        button.innerText = "Afficher la clé secrète";
+                    }
+                }
+            </script>
+            <div class="justify-between">
+                <dt class="text-sm font-medium leading-5 text-left text-skin-muted">
+                    URL de redirection
+                </dt>
+                <dd class="mt-1 text-sm leading-5 text-left text-skin-base">
+                    <?= service('settings')->get('Nextcloud.nextcloudRedirectUri') ?>
+                </dd>
+            </div>
+        </dl>
+        <br>
         <a href="<?=route_to('del-params')?>" 
             class="inline-flex items-center justify-center p-1 mb-4 text-sm text-red-500 transition duration-300 rounded-lg bg-red-50 hover:text-red-900 hover:bg-red-100 dark:text-red-400 dark:bg-red-800 dark:hover:bg-red-700 dark:hover:text-white">
                 <span class="w-full">Supprimer la configuration de Nextcloud</span>

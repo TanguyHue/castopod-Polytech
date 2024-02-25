@@ -13,24 +13,27 @@ $routes->add('scheduled-video-clips', 'SchedulerController::generateVideoClips',
     'namespace' => 'Modules\Admin\Controllers',
 ]);
 
+$routes->get('import', 'AuthController::import/$1', [
+    'as' => 'episode-import',
+]);
+$routes->get('importUrl', 'AuthController::importUrl', [
+    'as' => 'episode-import-url',
+]);
+$routes->post('setParams', 'AuthController::addOAuth', [
+    'as' => 'set-params',
+]);
+$routes->get('delParams', 'AuthController::removeOAuth', [
+    'as' => 'del-params',
+]);
+$routes->post('setFolder', 'AuthController::setFolder', [
+    'as' => 'set-folder',
+]);
 // Admin area routes
 $routes->group(
     config(Admin::class)->gateway,
     [
         'namespace' => 'Modules\Admin\Controllers',
     ],
-    $routes->get('import', 'AuthController::import/$1', [
-        'as' => 'episode-import',
-    ]),
-    $routes->get('importUrl', 'AuthController::importUrl', [
-        'as' => 'episode-import-url',
-    ]),
-    $routes->post('setParams', 'AuthController::addOAuth', [
-        'as' => 'set-params',
-    ]),
-    $routes->get('delParams', 'AuthController::removeOAuth', [
-        'as' => 'del-params',
-    ]),
     static function ($routes): void {
         $routes->get('/', 'DashboardController', [
             'as' => 'admin',

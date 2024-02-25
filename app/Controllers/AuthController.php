@@ -59,6 +59,22 @@ class AuthController extends BaseController
             ->set('Nextcloud.nextcloudRedirectUri', $redirectUri);
     }
 
+    public function setFolder(): RedirectResponse
+    {
+        $folder = esc($this->request->getPost('nextcloudFolder'));
+
+        if ($folder[0] !== '/') {
+            $folder = '/' . $folder;
+        }
+
+        service('settings')
+            ->set('Nextcloud.nextcloudFolder', $folder);
+
+        return redirect()
+            ->back()
+            ->with('success', 'Paramètres enregistrés');
+    }
+
     public function authenticate(): RedirectResponse
     {
         if (! isset($this->oauth)) {
@@ -183,10 +199,11 @@ class AuthController extends BaseController
         return $_SESSION['RT'];
     }
 
-    public function import(string $path = '/castopod'): string
+    public function import(string $path = ''): string
     {
-        if ($path === '$1') {
-            $path = '/castopod';
+        if ($path === '$1' || $path === '') {
+            $path = service('settings')
+                ->get('Nextcloud.nextcloudFolder');
         }
         if (! isset($this->oauth)) {
             $this->oauth = new Oauth(

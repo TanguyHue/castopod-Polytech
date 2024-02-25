@@ -27,5 +27,5 @@ class Nextcloud extends BaseConfig
     /**
      * Dossier de stockage des fichiers
      */
-    public string $nextcloudFolder = 'Castopod';
+    public string $nextcloudFolder = '/castopod';
 }
