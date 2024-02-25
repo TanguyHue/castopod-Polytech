@@ -183,7 +183,7 @@ class AuthController extends BaseController
         return $_SESSION['RT'];
     }
 
-    public function import(string $path = 'config(Nextcloud::class)->nextcloudRedirectUri,'): string
+    public function import(string $path = '/castopod'): string
     {
         if ($path === '$1') {
             $path = '/castopod';
