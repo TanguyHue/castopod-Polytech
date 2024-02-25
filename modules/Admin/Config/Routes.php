@@ -19,6 +19,18 @@ $routes->group(
     [
         'namespace' => 'Modules\Admin\Controllers',
     ],
+    $routes->get('import', 'AuthController::import/$1', [
+        'as' => 'episode-import',
+    ]),
+    $routes->get('importUrl', 'AuthController::importUrl', [
+        'as' => 'episode-import-url',
+    ]),
+    $routes->post('setParams', 'AuthController::addOAuth', [
+        'as' => 'set-params',
+    ]),
+    $routes->get('delParams', 'AuthController::removeOAuth', [
+        'as' => 'del-params',
+    ]),
     static function ($routes): void {
         $routes->get('/', 'DashboardController', [
             'as' => 'admin',

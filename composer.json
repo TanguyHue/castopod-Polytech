@@ -10,6 +10,7 @@
     "adaures/ipcat-php": "^v1.0.0",
     "adaures/podcast-persons-taxonomy": "^v1.0.1",
     "aws/aws-sdk-php": "^3.299.1",
+    "bahuma/oauth2-nextcloud": "^2.0",
     "chrisjean/php-ico": "^1.0.4",
     "cocur/slugify": "^v4.5.1",
     "codeigniter4/framework": "v4.4.5",
