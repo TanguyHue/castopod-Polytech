@@ -28,7 +28,7 @@ helper('form');
     </dt>
     <dd class="mt-1 text-sm leading-5">
         <?php if(isset($email)): ?>
-            Compte déjà associé avec <?= $email ?>.
+            Compte associé avec <?= $email ?>.
             <button onclick="confirmDelete()" class="inline-flex items-center justify-center p-1 mb-4 ml-4 text-sm text-red-500 transition duration-300 rounded-lg bg-red-50 hover:text-red-900 hover:bg-red-100 dark:text-red-400 dark:bg-red-800 dark:hover:bg-red-700 dark:hover:text-white">
                 Supprimer l'association
             </button>
@@ -39,6 +39,35 @@ helper('form');
                     }
                 }
             </script>
+
+            <br>
+
+            <form action="<?= route_to('set-folder') ?>" method="POST" class="flex flex-col w-full max-w-xl gap-y-4" enctype="multipart/form-data">
+                <?= csrf_field() ?>
+                <Forms.Section
+                    title="Organisation du Nextcloud"
+                    subtitle="Lors de la recherche des fichiers audios, Castopod va chercher dans un dossier
+                    principale. Par défaut, il va chercher dans le dossier /castopod, mais vous pouvez
+                    le modifier ici">
+                
+                
+                <Forms.Field
+                    label="Nom du dossier principal"
+                    name="nextcloudFolder"
+                    type="text"
+                    required="true"
+                    value="<?= service('settings')->get('Nextcloud.nextcloudFolder') ?>"
+                    hint="Exemple : nomDossier/"
+                />
+
+                <Button 
+                    variant="primary" 
+                    type="submit" 
+                    class="self-end"><?= lang('Settings.theme.submit') ?>
+                </Button>
+
+                </Forms.Section>
+            </form>
         <?php else: ?>
             <a href="<?=
                 route_to('syncAccount') . '?redirectLink=my-account'
@@ -49,35 +78,6 @@ helper('form');
                 </svg>
             </a>
         <?php endif; ?>
-        <br>
-        
-        <form action="<?= route_to('set-folder') ?>" method="POST" class="flex flex-col w-full max-w-xl gap-y-4" enctype="multipart/form-data">
-            <?= csrf_field() ?>
-            <Forms.Section
-                title="Organisation du Nextcloud"
-                subtitle="Lors de la recherche des fichiers audios, Castopod va chercher dans un dossier
-                principale. Par défaut, il va chercher dans le dossier /castopod, mais vous pouvez
-                le modifier ici">
-            
-            
-            <Forms.Field
-                label="Nom du dossier principal"
-                name="nextcloudFolder"
-                type="text"
-                required="true"
-                value="<?= service('settings')->get('Nextcloud.nextcloudFolder') ?>"
-                hint="Exemple : nomDossier/"
-            />
-
-            <Button 
-                variant="primary" 
-                type="submit" 
-                class="self-end"><?= lang('Settings.theme.submit') ?>
-            </Button>
-
-            </Forms.Section>
-        </form>
-        
         <br>
 
         <p>Configuration actuelle du Nextcloud</p>
@@ -136,11 +136,18 @@ helper('form');
             </div>
         </dl>
         <br>
-        <a href="<?=route_to('del-params')?>" 
-            class="inline-flex items-center justify-center p-1 mb-4 text-sm text-red-500 transition duration-300 rounded-lg bg-red-50 hover:text-red-900 hover:bg-red-100 dark:text-red-400 dark:bg-red-800 dark:hover:bg-red-700 dark:hover:text-white">
-                <span class="w-full">Supprimer la configuration de Nextcloud</span>
-        </a>
     </dd>
+
+    <button onclick="confirmDelNextcloud()" class="inline-flex items-center justify-center p-1 text-sm text-red-500 transition duration-300 rounded-lg bg-red-50 hover:text-red-900 hover:bg-red-100 dark:text-red-400 dark:bg-red-800 dark:hover:bg-red-700 dark:hover:text-white">
+        Supprimer l'association avec Nextcloud
+    </button>
+    <script>
+        function confirmDelNextcloud() {
+            if (confirm("Êtes-vous sûr de vouloir désactiver l'association avec Nextcloud ?")) {
+                document.location.href='<?= route_to('del-params')?>';
+            }
+        }
+    </script>
 </div>
 
 <?php else: ?>

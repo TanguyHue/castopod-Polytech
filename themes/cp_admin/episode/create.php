@@ -42,7 +42,7 @@
         <?php endif; ?>
         <?php if (isset($audioFileLink)) : ?>
             <input type="hidden" name="audio_file_link" value="<?= $audioFileLink ?>" />
-            <p>Fichier sélectionné : <?= esc($audioName) ?></p>
+            <p>Fichier sélectionné : <?= urldecode(esc($audioName)) ?></p>
 
             <a href="<?php
                         $currentUrl = "http://{$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}";

@@ -102,8 +102,11 @@
                                     button.className = 'transition duration-300 bg-navigation hover:bg-green-900 text-white py-3 px-6 rounded mb-2 w-full';
 
                                     button.addEventListener('click', function() {
-                                        window.location.href = '<?= $_GET['lastUrl'] ?>?url=' + file.url + '/download' + file.file_target + '&name=' + file.file_target.substring(1);
+                                        var encodedUrl = encodeURI(file.url + '/download' + file.file_target);
+                                        var encodedName = encodeURI(file.file_target.substring(1));
+                                        window.location.href = '<?= $_GET['lastUrl'] ?>?url=' + encodeURIComponent(encodedUrl) + '&name=' + encodeURIComponent(encodedName);
                                     });
+
 
                                     const li = document.createElement('li');
                                     li.appendChild(button);
@@ -130,14 +133,15 @@
 
                 if(folders.length === 0) {
                     const p = document.createElement('p');
-                    p.textContent = 'Aucun dossier trouvé';
+                    p.textContent = 'Aucun dossier/fichier trouvé';
                     foldersContainer.appendChild(p);
                 }
 
                 for (var i = 0; i < folders.length; i++) {
                     var folder = folders[i];
                     
-                    (function(folder) {
+                    if(folder.mimetype === 'httpd/unix-directory') {
+                        (function(folder) {
                         var details = document.createElement('details');
                         var summary = document.createElement('summary');
                         summary.style.cursor = 'pointer';
@@ -153,6 +157,30 @@
 
                         foldersContainer.appendChild(details);
                     })(folder);
+                    } else {
+                        if (folder.mimetype.split('/')[0] === 'audio') {
+                            const button = document.createElement('button');
+
+                            var lastPoint = folder.name.lastIndexOf('.');
+                            var fileName = folder.name.substring(0, lastPoint);
+                            button.textContent = fileName.substring(1);
+                            button.className = 'transition duration-300 bg-navigation hover:bg-green-900 text-white py-3 px-6 rounded mb-2 w-full';
+
+                            var encodedUrl = encodeURI(folder.url);
+                            console.log(encodedUrl);
+                            var encodeName = encodeURI(folder.name.substring(1));
+                            console.log(encodeName);
+                            
+                            button.addEventListener('click', function() {
+                                window.location.href = '<?= $_GET['lastUrl'] ?>?url=' + encodeURIComponent(encodedUrl) + '&name=' + encodeURIComponent(encodeName);
+                            });
+
+                            const li = document.createElement('li');
+                            li.appendChild(button);
+                            li.classList.add('list-none'); 
+                            foldersContainer.appendChild(li);
+                        }
+                    }
                 }
             });
         </script>

@@ -231,8 +231,10 @@ class AuthController extends BaseController
         if (isset($folders['ocs']['data']) && is_array($folders['ocs']['data'])) {
             $folderNames = array_map(function ($item) {
                 return [
-                    'name' => $item['file_target'],
-                    'path' => $item['path'],
+                    'name'     => $item['file_target'],
+                    'path'     => $item['path'],
+                    'mimetype' => $item['mimetype'],
+                    'url'      => $item['url'] . '/download' . $item['file_target'],
                 ];
             }, $folders['ocs']['data']);
         } else {
