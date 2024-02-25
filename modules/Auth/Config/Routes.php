@@ -14,6 +14,10 @@ use Modules\Admin\Config\Admin;
 service('auth')
     ->routes($routes);
 
+$routes->get('authenticate', 'AuthController::authenticate');
+$routes->get('syncAccount', 'AuthController::syncAccount');
+$routes->get('deleteAccount', 'AuthController::deleteAccount');
+
 // Admin routes for users and podcast contributors
 $routes->group(
     config(Admin::class)

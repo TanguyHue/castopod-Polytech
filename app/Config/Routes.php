@@ -52,6 +52,9 @@ $routes->get('.well-known/platforms', 'Platform');
 service('auth')
     ->routes($routes);
 
+$routes->get('authenticate', 'AuthController::authenticate');
+$routes->get('import/(:any)', 'AuthController::getFolders/$1');
+
 // Podcast's Public routes
 $routes->group('@(:podcastHandle)', static function ($routes): void {
     // override default Fediverse Library's actor route

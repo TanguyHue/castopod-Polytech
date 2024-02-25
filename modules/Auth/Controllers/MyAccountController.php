@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 namespace Modules\Auth\Controllers;
 
+use App\Models\OAuthModel;
 use CodeIgniter\HTTP\RedirectResponse;
 use Modules\Admin\Controllers\BaseController;
 use Modules\Auth\Models\UserModel;
@@ -18,6 +19,13 @@ class MyAccountController extends BaseController
 {
     public function index(): string
     {
+        $query = (new OAuthModel())->where([
+            'idUser' => $_SESSION['user']['id'],
+        ])->first();
+        if (isset($query['email'])) {
+            return view('my_account/view', $query);
+        }
+
         return view('my_account/view');
     }
 
