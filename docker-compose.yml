@@ -84,7 +84,27 @@ services:
       castopod:
         ipv4_address: 172.31.0.6
 
+  nextcloud:
+    image: nextcloud:latest
+    container_name: castopod_nextcloud
+    environment:
+      - MYSQL_HOST=mariadb
+      - MYSQL_DATABASE=castopod
+      - MYSQL_USER=castopod
+      - MYSQL_PASSWORD=castopod
+    volumes:
+      - ./nextcloud/init_nextcloud.sh:/docker-entrypoint-hooks.d/before-starting/init_nextcloud.sh
+      - nextcloud:/var/www/html
+    ports:
+      - 8090:80
+    depends_on:
+      - mariadb
+    networks:
+      castopod:
+        ipv4_address: 172.31.0.7
+
 volumes:
   redis:
   mariadb:
   phpmyadmin:
+  nextcloud:
