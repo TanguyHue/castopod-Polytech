@@ -58,11 +58,11 @@ enseignant-chercheur à Polytech Nantes.
 L'objectif de ce projet est de répondre aux besoins de la radio Jet FM en
 modulant la plateforme Castopod. Les besoins principaux sont les suivants :
 
-- Intégration de la plateforme Nextcloud pour l'authentification des
+- 📁 : Intégration de la plateforme Nextcloud pour l'authentification des
   utilisateurs et la récupération des fichiers audio
-- Amélioration du système d'upload des vignettes pour les épisodes et les
+- 🖼️ : Amélioration du système d'upload des vignettes pour les épisodes et les
   podcasts
-- Ajout de fonctionnalités liées aux flux RSS
+- 📶 : Ajout de fonctionnalités liées aux flux RSS
 
 On peut également retrouver une documentation plus complète en ligne au lien
 suivant :
