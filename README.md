@@ -4,7 +4,7 @@
 
 Ce projet est un fork de [Castopod](https://github.com/ad-aures/castopod), un logiciel de gestion de podcasts open-source développé par Ad Aures. Il a été créé pour le besoin spécifique de la radio Jet FM, une radio associative nantaise. 
 
-Le but du projet est de moduler la plateforme Castopod pour répondre aux besoins de la radio Jet FM.
+Le but du projet est de moduler la plateforme [Castopod](https://castopod.org/fr/) pour répondre aux besoins de la radio [Jet FM](https://www.jetfm.fr/).
 
 ## Sommaire
 
