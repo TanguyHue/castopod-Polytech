@@ -11,6 +11,7 @@ Le but du projet est de moduler la plateforme Castopod pour répondre aux besoin
 - [Project Castopod - Jet FM](#project-castopod---jet-fm)
   - [Description](#description)
   - [Sommaire](#sommaire)
+  - [Ajout de Polytech](#ajout-de-polytech)
   - [Installation](#installation)
     - [1. Prérequis](#1-prérequis)
     - [2. Développement dans VS Code](#2-développement-dans-vs-code)
@@ -18,6 +19,22 @@ Le but du projet est de moduler la plateforme Castopod pour répondre aux besoin
     - [4. Population de la base de données](#4-population-de-la-base-de-données)
     - [5. Lancement de l'application](#5-lancement-de-lapplication)
   - [Contribution](#contribution)
+
+## Ajout de Polytech
+
+Ce projet s'inscrit dans le cadre des Projets Transversaux de 4ème année à Polytech Nantes. Il est réalisé par une équipe de 3 étudiants en Informatique :
+  - Tanguy Hue
+  - Emilien L'Haridon
+  - Ulysse Devincre
+
+Le projet est encadré par [M. Perreira Da Silva](https://www.univ-nantes.fr/matthieu-perreira-da-silva), enseignant-chercheur à Polytech Nantes.
+
+L'objectif de ce projet est de répondre aux besoins de la radio Jet FM en modulant la plateforme Castopod. Les besoins principaux sont les suivants : 
+- Intégration de la plateforme Nextcloud pour l'authentification des utilisateurs et la récupération des fichiers audio
+- Amélioration du système d'upload des vignettes pour les épisodes et les podcasts
+- Ajout de fonctionnalités liées aux flux RSS
+
+On peut également retrouver une documentation plus complète en ligne au lien suivant : [Documentation Castopod - Jet FM](https://doc.dev.jetfm.fr/).
 
 ## Installation
 
