@@ -2,7 +2,7 @@
 
 ## Description
 
-Ce projet est un fork de [Castopod](https://github.com/ad-aures/castopod), un logiciel de gestion de podcasts open-source développé par Ad Aures. Il a été créé pour le besoin spécifique de la radio Jet FM, une radio associative nantaise. 
+Ce projet est un fork de [Castopod](https://github.com/ad-aures/castopod), un logiciel de gestion de podcasts open-source développé par Ad Aures. Il a été créé pour les besoins spécifiques de la radio Jet FM, une radio associative nantaise. 
 
 Le but du projet est de moduler la plateforme [Castopod](https://castopod.org/fr/) pour répondre aux besoins de la radio [Jet FM](https://www.jetfm.fr/).
 
@@ -34,7 +34,7 @@ L'objectif de ce projet est de répondre aux besoins de la radio Jet FM en modul
 - Amélioration du système d'upload des vignettes pour les épisodes et les podcasts
 - Ajout de fonctionnalités liées aux flux RSS
 
-On peut également retrouver une documentation plus complète en ligne au lien suivant : [Documentation Castopod - Jet FM](https://doc.dev.jetfm.fr/).
+On peut également retrouver une documentation plus complète en ligne au lien suivant : [Documentation Castopod - Jet FM](https://doc.dev.jetfm.fr/books/documentation-castopod).
 
 ## Installation
 
@@ -104,6 +104,8 @@ Si vous utilisez Visual Studio Code, vous pouvez prendre avantage du dossier `.d
 
 ### 3. Installation des dépendances
 
+Les installations des dépendances se font normalement automatiquement lors de la première ouverture du conteneur, mais si vous avez rencontrez une erreur et que vous avez dû relancer le conteneur durant l'installation, vous devez peut-être taper les commandes ci-dessous pour installer les bibliothèqes PHP et JS nécessaires au projet.
+
 1. Installation des dépendances PHP
 
 ```bash
@@ -171,16 +173,29 @@ php spark db:seed AuthSeeder
 
 ### 5. Lancement de l'application
 
-Le conteneur est maintenant prêt à être utilisé. Vous pouvez ouvrir un terminal dans Visual Studio Code et lancer les commandes suivantes :
+Le conteneur est maintenant prêt à être utilisé. Normalement, le serveur de Castopod se lance automatiquement lorsque le conteneur s'ouvre (vous pouvez le vérifier en regardant sur VS Code si le port 8080 est en train d'écouter, dans l'onglet `Port`). Si ce n'est pas le cas, ouvrez un terminal et tapez cette commande : 
+
+```bash
+php spark serve - 0.0.0.0
+```
+
+Cela va lancer le serveur web de Castopod sur le port 80 du conteneur App, et comme décrit dans le fichier `docker-compose.yml`, vous povuez accéder à ce port via le port 8080 en local.
+
+Une fois le serveur lancé (automatiquement ou manuellement), vous devrez également lancer le serveur de développement de [Vite](https://vitejs.dev/) qui va permettre de gérer le frontend de Castopod. Pour cela, ouvrez un nouveau terminal et lancez la commande :
 
 
 ```bash
 npm run dev
 ```
 
-Cela va lancer le serveur de développement et le serveur de fichiers statiques. Vous pouvez maintenant accéder à l'application en ouvrant votre navigateur à l'adresse `http://localhost:8080`.
+Vous pouvez maintenant accéder à l'application en ouvrant votre navigateur à l'adresse `http://localhost:8080`.
 
-Vous pouvez également accéder à l'interface phpmyadmin à l'adresse `http://localhost:`8888` avec les identifiants suivants :
+Si vous lancez l'application pour la première, vous devrez créer un compte super-administrateur. Pour cela, vous pouvez accéder à la page `http://localhost:8080/cp-install`. 
+Une fois le compte créé, vous devriez tomber sur la page de connexion pour accéder à la page d'administration. Vous pouvez alors utiliser le compte créé pour vous connecter.
+
+Enfin, pour accéder à la page d'administration, vous pouvez aller sur la page `http://localhost:8080/cp-admin`.
+
+Vous pouvez également accéder à l'interface phpmyadmin à l'adresse `http://localhost:8888` avec les identifiants suivants :
 
 - Utilisateur : `castopod`
 - Mot de passe : `castopod`
